@@ -3,9 +3,10 @@
 # However, we will use a more powerful and simpler library called requests.
 # This is external library that you may need to install first.
 import requests
-
+import json
 
 def get_data():
+    """Retrieves earthquake data from the internet and saves it to a file"""
     # With requests, we can ask the web service for the data.
     # Can you understand the parameters we are passing here?
     response = requests.get(
@@ -26,32 +27,50 @@ def get_data():
     text = response.text
     # To understand the structure of this text, you may want to save it
     # to a file and open it in VS Code or a browser.
-    # See the README file for more information.
-    ...
+    with open("eq_store.json", 'w') as f:
+        f.write(text)
 
     # We need to interpret the text to get values that we can work with.
     # What format is the text in? How can we load the values?
-    return ...
+    eq_struct = json.loads(text)
+    return eq_struct
 
-def count_earthquakes(data):
+def load_data():
+    """Reads the stored earthquake data in from a file"""
+    with open("eq_store.json", 'r') as f:
+        text = f.read()
+    eq_struct = json.loads(text)
+    return eq_struct
+
+def count_earthquakes(db):
     """Get the total number of earthquakes in the response."""
-    return ...
+    
+    return db['metadata']['count']
 
 
-def get_magnitude(earthquake):
+def get_magnitude(eq, db):
     """Retrive the magnitude of an earthquake item."""
-    return ...
+    
+    return db['features'][eq]['properties']['mag']
 
 
-def get_location(earthquake):
+def get_location(eq, db):
     """Retrieve the latitude and longitude of an earthquake item."""
-    # There are three coordinates, but we don't care about the third (altitude)
-    return ...
+    
+    lat,long = db['features'][eq]['geometry']['coordinates'][0:2]
+    return {'coordinates':{'latitude':lat,'longitude':long}}
 
 
-def get_maximum(data):
+def get_maximum(db):
     """Get the magnitude and location of the strongest earthquake in the data."""
-    ...
+    
+    max_mag = 0
+    max_index = 0
+    for eq in range(count_earthquakes(db)):
+        if get_magnitude(eq, db) > max_mag:
+            max_mag = get_magnitude(eq, db)
+            max_index = eq
+    return max_mag, get_location(max_index, db)['coordinates']
 
 
 # With all the above functions defined, we can now call them and get the result
